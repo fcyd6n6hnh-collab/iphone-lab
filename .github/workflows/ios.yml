@@ -1,6 +1,10 @@
 name: ios-lab
 on:
   workflow_dispatch:
+    inputs:
+      runner:
+        description: runner label
+        default: macos-latest
   push:
     branches: [main]
 permissions:
@@ -10,7 +14,7 @@ defaults:
     shell: bash --noprofile --norc {0}
 jobs:
   probe:
-    runs-on: macos-latest
+    runs-on: ${{ inputs.runner || 'macos-latest' }}
     timeout-minutes: 40
     env:
       OUT: ${{ github.workspace }}/results
@@ -129,6 +133,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ios-lab-results
+          name: ios-lab-results-${{ inputs.runner || 'macos-latest' }}
           path: results
           if-no-files-found: warn
