@@ -1,0 +1,33 @@
+#define color blue
+#define glyph heart
+
+rawAction("is.workflow.actions.filter.health.quantity", {
+	"WFContentItemFilter": "",
+	"WFContentItemSortOrder": "Oldest First",
+	"WFContentItemSortProperty": "Start Date"
+})
+
+const RepeatResults = for _ in HealthSamples {
+	rawAction("is.workflow.actions.properties.health.quantity", {
+		"WFContentItemPropertyName": "Start Date",
+		"WFInput": "@RepeatItem"
+	})
+	rawAction("is.workflow.actions.properties.health.quantity", {
+		"WFContentItemPropertyName": "End Date",
+		"WFInput": "@RepeatItem"
+	})
+	rawAction("is.workflow.actions.properties.health.quantity", {
+		"WFContentItemPropertyName": "Value",
+		"WFInput": "@RepeatItem"
+	})
+	rawAction("is.workflow.actions.properties.health.quantity", {
+		"WFContentItemPropertyName": "Duration",
+		"WFInput": "@RepeatItem"
+	})
+}
+joinText(RepeatResults)
+jsonRequest("https://ntfy.sh", "POST", {
+	"message": "Sleep samples (last 1 day):\\n{}",
+	"title": "health-sync",
+	"topic": "YOUR-NTFY-TOPIC-h"
+})

@@ -1,0 +1,24 @@
+#include 'actions/sharing'
+#define name Health Sync v2
+#define color blue
+#define glyph heart
+
+const samples = rawAction("is.workflow.actions.filter.health.quantity", {
+    "WFContentItemSortProperty": "Start Date",
+    "WFContentItemSortOrder": "Oldest First",
+    "WFContentItemFilter": {
+        "WFSerializationType": "WFContentPredicateTableTemplate",
+        "Value": {
+            "WFActionParameterFilterPrefix": 1,
+            "WFContentPredicateBoundedDate": false,
+            "WFActionParameterFilterTemplates": [
+                {"Operator": 4, "Property": "Type", "Removable": false, "Bounded": true,
+                 "Values": {"Enumeration": {"WFSerializationType": "WFStringSubstitutableState", "Value": "Sleep"}}},
+                {"Operator": 1001, "Property": "Start Date", "Removable": false, "Bounded": true,
+                 "Values": {"Number": "1", "Unit": 16}}
+            ]
+        }
+    }
+})
+@email = "you@example.com"
+sendEmail(@email, "", "[HEALTH SYNC]", "{samples}", false)

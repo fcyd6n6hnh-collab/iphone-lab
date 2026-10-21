@@ -1,0 +1,476 @@
+/*
+Basic Actions and Global Types
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// [Doc]: Stop Shortcut: Stops the shortcut.
+
+
+// [Doc]: Nothing: Clear the current output.
+
+
+// [Doc]: Comment: Add an explicit comment.
+
+
+// [Doc]: Get Type: Get the type of input.
+
+
+// [Doc]: Get Object of Class: Get the object of `class` from a variable.
+
+
+// [Doc]: [Output] Show Result: Show `input`.
+
+
+// [Doc]: [Output] Quick Look: Preview `input` in Quick Look.
+
+
+// [Doc]: [Output] Stop and Output: Stop and output `output`. Do nothing if there is nowhere to output.
+
+
+// [Doc]: [Output] Output or Copy to Clipboard: Stop and output `output`. Copy to the clipboard if there is nowhere to output.
+
+
+
+
+// [Doc]: [Output] Must Output: Stop and output `output`. Respond with response if there is nowhere to output.
+
+
+
+
+// [Doc]: [Output] Content Graph: Display input as a content graph.
+
+
+
+
+
+
+
+
+
+
+// [Doc]: Count: Returns a count of `type` of items in `input`.
+
+
+// [Doc]: [Notifications] Alert: Shows an alert with text and optional title and an OK button to proceed.
+
+
+
+
+// [Doc]: [Notifications] Confirm: Shows an alert with text and optional title. It displays an OK button to proceed, and a cancel button that stops the Shortcut.
+
+
+
+
+// [Doc]: [Notifications] Show Notification: Shows a custom notification message.
+
+
+
+
+
+
+
+// [Doc]: [Numbers] Number: Create a number value.
+
+
+// [Doc]: [Numbers] Format Number: Format number based on decimal place.
+
+
+// [Doc]: [Numbers] Get Numbers: Get numbers from input.
+
+
+// [Doc]: [Numbers] Random Number: Returns a random number between `min` and `max`.
+
+
+
+
+// [Doc]: [Control Flow] Wait: Wait a specified number of seconds.
+
+
+// [Doc]: [Control Flow] Wait to Return: Wait for the user to return to Shortcuts.
+
+
+// [Doc]: [Search] Search/Spotlight: Get results from search on iOS or iPadOS, and Spotlight on macOS.
+
+
+// [Doc]: [Dictionaries] Get Dictionary: Get the dictionary from `input`.
+
+
+// [Doc]: [Dictionaries] Get Keys from Dictionary: Get only the keys from the `dictionary`.
+
+
+
+
+// [Doc]: [Dictionaries] Get Values from Dictionary: Get only the values from the `dictionary`.
+
+
+
+
+// [Doc]: [Dictionaries] Get Value from Dictionary: For constants only, otherwise `dictionary['key']` syntax should be used.
+
+
+
+
+// [Doc]: [Dictionaries] Set Value in Dictionary: Set the value of `key` to `value` in `dictionary`.
+
+
+// [Doc]: [Items] Get Name: Get the name of an item.
+
+
+// [Doc]: [Items] Set Name: Set the name of an item.
+
+
+// [Doc]: [Lists] Choose from List: Prompts the user to choose from a list.
+
+
+
+
+
+
+
+// [Doc]: [Lists] Get First Item: Get first item in a list.
+
+
+
+
+// [Doc]: [Lists] Get Last Item: Get the last item in a list.
+
+
+
+
+// [Doc]: [Lists] Get Random Item: Get random item from list.
+
+
+
+
+// [Doc]: [Lists] Get List Item: Get item from `list` at `index`. Keep in mind Shortcuts starts counting indexes at 1.
+
+
+
+
+// [Doc]: [Lists] Get List Items: Get items from a `list` between two indexes. Keep in mind Shortcuts starts counting indexes at 1.
+
+
+
+
+
+/*
+Web Actions
+*/
+
+// [Doc]: [URLs] Open URL: Open URL in default browser.
+
+
+
+
+// [Doc]: [URLs] Expand URL: Get the expanded version of a URL. For instance, returns the full URL for a short URL, or the URL which a URL immediately redirects to, etc.
+
+
+// [Doc]: [URLs] Get URLs: Get URLs from `input`.
+
+
+
+
+
+
+
+
+
+
+
+
+
+// [Doc]: [URLs] Get URL Detail: Get a detail about a URL.
+
+
+// [Doc]: [URLs] Get URL Headers: Get the headers from a URL.
+
+
+// [Doc]: [URLs] URL Encode: Encode text for a URL.
+
+
+
+
+// [Doc]: [URLs] URL Decode: Decode text from URL encoding.
+
+
+
+
+// [Doc]: [URLs] Open X-Callback URL
+
+
+// [Doc]: [Safari] Get Current URL: Get current URL in Safari.
+
+
+// [Doc]: [Safari] Show Webpage: Show webpage using Safari.
+
+
+// [Doc]: [Safari] Run JavaScript on Webpage: Run some custom JavaScript on the current webpage in Safari.
+
+
+
+
+
+
+
+
+
+// [Doc]: [Safari] Get Webpage Detail: Get a detail about a provided webpage.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// [Doc]: [Safari] Search Web: Search the web using a provided search engine and query.
+
+
+// [Doc]: [Safari] Get Webpage Contents: Get contents of Webpage from Safari.
+
+
+// [Doc]: [Giphy] Get GIFs from Giphy: Gets a number of GIFs from Giphy for a search query.
+
+
+
+
+// [Doc]: [Giphy] Search Giphy: Gets GIFs from Giphy for a search query.
+
+
+// [Doc]: [Articles] Get Article: Get article from webpage.
+
+
+// [Doc]: [Articles] Get Article Detail: Get a detail about an article.
+
+
+// [Doc]: [RSS] Get RSS: Get RSS feed contents at URL. Limited by number of items.
+
+
+// [Doc]: [RSS] Get RSS Feeds: Get feeds from multiple URLs.
+
+
+
+
+
+
+
+
+
+// [Doc]: [HTTP] Download URL: Download the contents of a URL.
+
+
+
+
+// [Doc]: [HTTP] Form Request: Send a `method` request to `url` with `body` and optional `headers.
+
+
+
+
+
+
+
+
+
+// [Doc]: [HTTP] JSON Request: Send a `method` JSON request to `url` with `body` and optional `headers.
+
+
+
+
+
+
+
+
+
+// [Doc]: [HTTP] File Request: Send a `method` file request to `url` with `body` and optional `headers.
+
+
+
+
+
+
+
+
+
+/*
+Device Actions
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// [Doc]: Get Device Detail: Get a detail about current device.
+
+
+// [Doc]: Get On-Screen Content: Get the content currently on-screen.
+
+
+// [Doc]: [Display] Get Orientation: Get the current orientation of the device.
+
+
+// [Doc]: Lock Screen: Lock the device screen.
+
+
+// [Doc]: Shut Down: Power off the device.
+
+
+// [Doc]: Reboot: Power off the device, then power it on again.
+
+
+
+
+// [Doc]: Vibrate Device: Vibrate the device. Only applies to Apple devices with the haptic engine.
+
+
+// [Doc]: Turn On Flashlight: Turn on the flashlight on the device with optional brightness setting.
+
+
+
+
+// [Doc]: Turn Off Flashlight: Turn off the flashlight on the device.
+
+
+
+
+// [Doc]: Toggle On Flashlight: Toggle the flashlight on the device with optional brightness setting.
+
+
+
+
+// [Doc]: Show Control Center: Open the control center on the device.
+
+
+// [Doc]: [Battery] Low Power Mode
+
+
+// [Doc]: [Battery] Get Battery Level: Get the current level of charge of the device battery.
+
+
+// [Doc]: [Battery] Connected to Charger: Determines if the device is currently connected to a charger.
+
+
+
+
+// [Doc]: [Battery] Is Charging: Determines if the device is currently charging.
+
+
+
+
+// [Doc]: [Battery] Charge Limit: Returns the current charge limit of the device battery.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// [Doc]: [Screen Time] Get Website & App Activity
+
+
+// [Doc]: [Connectivity] Airplane Mode
+
+
+// [Doc]: [Connectivity] Bluetooth
+
+
+// [Doc]: [Connectivity] Wifi
+
+
+// [Doc]: [Connectivity] Cellular Data
+
+
+// [Doc]: [Display] Set Brightness
+
+
+// [Doc]: [Display] Orientation Lock
+
+
+// [Doc]: Set Volume
+
+
+// [Doc]: [Personal Hotspot] Personal Hotspot
+
+
+// [Doc]: [Passwords] Search Passwords: Searches passwords in the Passwords app.
+
+
+// [Doc]: [System] Dismiss Siri: Dismisses Siri.
+
+
+// [Doc]: [System] Return to Home Screen: Returns to the device home screen.
+
+
+#define name Grok Inbox v2
+#define color green
+#define glyph bell
+
+const contents = downloadURL("https://ntfy.sh/YOUR-NTFY-TOPIC-q/raw?poll=1&since=60m")
+const lines = splitText("{contents}", "\n")
+for item in lines {
+    if @item {
+        alert("REMINDER_PLACEHOLDER")
+    }
+}
+const battery = getBatteryLevel()
+downloadURL("https://ntfy.sh/YOUR-NTFY-TOPIC-r/publish?message=inbox-ok%20battery%3D{battery}")

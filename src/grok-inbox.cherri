@@ -1,0 +1,15 @@
+#include 'actions/web'
+#include 'actions/device'
+#define name Grok Inbox v2
+#define color green
+#define glyph bell
+
+const contents = downloadURL("https://ntfy.sh/YOUR-NTFY-TOPIC-q/raw?poll=1&since=60m")
+const lines = splitText("{contents}", "\n")
+for item in lines {
+    if @item {
+        alert("REMINDER_PLACEHOLDER")
+    }
+}
+const battery = getBatteryLevel()
+downloadURL("https://ntfy.sh/YOUR-NTFY-TOPIC-r/publish?message=inbox-ok%20battery%3D{battery}")

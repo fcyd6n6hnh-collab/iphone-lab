@@ -1,0 +1,6 @@
+#include 'actions/sharing'
+#define color blue
+#define glyph heart
+
+@GrokEmail = "you@example.com"
+sendEmail(@GrokEmail, "", "[HEALTH SYNC] test", "[HEALTH SYNC] test", false)

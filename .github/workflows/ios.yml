@@ -1,0 +1,134 @@
+name: ios-lab
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash --noprofile --norc {0}
+jobs:
+  probe:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    env:
+      OUT: ${{ github.workspace }}/results
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare results dir
+        run: mkdir -p "$OUT/screens"
+
+      - name: (a1) Host, Xcode and simulator runtimes
+        continue-on-error: true
+        run: |
+          set -x
+          sw_vers | tee "$OUT/host.txt"
+          uname -m | tee -a "$OUT/host.txt"
+          ls -d /Applications/Xcode* | tee "$OUT/xcodes.txt"
+          xcode-select -p | tee -a "$OUT/xcodes.txt"
+          xcodebuild -version | tee -a "$OUT/xcodes.txt"
+          xcrun simctl list runtimes | tee "$OUT/runtimes.txt"
+          xcrun simctl list devices available | tee "$OUT/devices.txt"
+
+      - name: (a2) Boot an iPhone simulator
+        id: boot
+        continue-on-error: true
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json,sys
+          d=json.load(sys.stdin)["devices"]
+          c=[(rt,x) for rt,xs in d.items() if "iOS" in rt for x in xs if x["name"].startswith("iPhone")]
+          c.sort(key=lambda t:t[0])
+          rt,x=c[-1]; print(x["udid"]); print(rt, x["name"], file=sys.stderr)')
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          echo "$UDID" > "$OUT/udid.txt"
+          xcrun simctl boot "$UDID"
+          time xcrun simctl bootstatus "$UDID" -b | tail -5
+          sleep 20
+          xcrun simctl io "$UDID" screenshot "$OUT/screens/01-home.png"
+          xcrun simctl list devices booted | tee "$OUT/booted.txt"
+
+      - name: (b1) Is there a Shortcuts app in the simulator?
+        continue-on-error: true
+        run: |
+          UDID=$(cat "$OUT/udid.txt")
+          xcrun simctl listapps "$UDID" > "$OUT/listapps.txt" || true
+          grep -E 'CFBundleIdentifier' "$OUT/listapps.txt" | sort -u | tee "$OUT/bundle-ids.txt"
+          echo "--- shortcuts-ish bundle ids:"; grep -iE 'shortcut|workflow' "$OUT/bundle-ids.txt" || echo "NONE"
+          echo "--- searching runtime root for Shortcuts.app / WorkflowKit"
+          for R in /Library/Developer/CoreSimulator/Volumes/*/Library/Developer/CoreSimulator/Profiles/Runtimes/*.simruntime \
+                   /Library/Developer/CoreSimulator/Profiles/Runtimes/*.simruntime; do
+            [ -d "$R" ] || continue
+            echo "runtime: $R"
+            ROOT="$R/Contents/Resources/RuntimeRoot"
+            ls "$ROOT/Applications" 2>/dev/null | tee -a "$OUT/runtime-apps.txt"
+            find "$ROOT" -maxdepth 4 \( -iname '*Shortcuts*.app' -o -iname 'WorkflowKit.framework' -o -iname 'ActionKit.framework' \) 2>/dev/null | tee -a "$OUT/runtime-shortcuts-hits.txt"
+          done
+
+      - name: (b2) macOS shortcuts CLI on the runner
+        continue-on-error: true
+        run: |
+          set -x
+          which shortcuts || echo "no shortcuts CLI"
+          shortcuts help 2>&1 | tee "$OUT/shortcuts-help.txt"
+          perl -e 'alarm 60; exec @ARGV' shortcuts list 2>&1 | tee "$OUT/shortcuts-list.txt"; echo "list exit=${PIPESTATUS[0]}"
+          ls -d /System/Applications/Shortcuts.app 2>&1
+
+      - name: (b3) Try shortcuts sign on each sanitized shortcut
+        continue-on-error: true
+        run: |
+          mkdir -p "$OUT/signed"
+          for f in shortcuts/*.plist; do
+            n=$(basename "$f" .plist)
+            plutil -convert binary1 -o "/tmp/$n.shortcut" "$f"
+            for mode in anyone people-who-know-me; do
+              echo "=== sign $n mode=$mode"
+              perl -e 'alarm 90; exec @ARGV' shortcuts sign --mode "$mode" --input "/tmp/$n.shortcut" --output "$OUT/signed/$n.$mode.shortcut" 2>&1
+              echo "exit=$?"
+            done
+          done 2>&1 | tee "$OUT/shortcuts-sign.txt"
+          ls -la "$OUT/signed" | tee -a "$OUT/shortcuts-sign.txt"
+          for s in "$OUT"/signed/*.shortcut; do [ -f "$s" ] && head -c 4 "$s" | xxd | tee -a "$OUT/shortcuts-sign.txt"; done
+
+      - name: (c1) plutil lint
+        continue-on-error: true
+        run: plutil -lint shortcuts/*.plist sandbox/tests/*.plist 2>&1 | tee "$OUT/plutil-lint.txt"
+
+      - name: (c2) Sandbox validation, fault tests and dry runs
+        continue-on-error: true
+        working-directory: sandbox
+        run: |
+          python3 sbx.py validate ../shortcuts/*.plist 2>&1 | tee "$OUT/sbx-validate.txt"
+          ./run_tests.sh 2>&1 | tee "$OUT/sbx-faulttests.txt"
+          for f in ../shortcuts/*.plist; do python3 sbx.py run "$f" --mocks mocks.example.json; done 2>&1 | tee "$OUT/sbx-run.txt"
+
+      - name: (d1) Open shortcuts:// URLs in the simulator
+        continue-on-error: true
+        run: |
+          UDID=$(cat "$OUT/udid.txt")
+          try() { echo "=== openurl $1"; xcrun simctl openurl "$UDID" "$1" 2>&1; echo "exit=$?"; sleep 8; xcrun simctl io "$UDID" screenshot "$OUT/screens/$2.png"; }
+          { try "shortcuts://" 02-shortcuts-scheme
+            try "shortcuts://run-shortcut?name=Health%20Test" 03-run-shortcut
+            try "workflow://" 04-workflow-scheme
+            try "https://www.icloud.com/shortcuts/" 05-safari-icloud-shortcuts
+            try "x-apple-health://" 06-health-scheme
+          } 2>&1 | tee "$OUT/openurl.txt"
+
+      - name: (d2) Try launching Shortcuts / Health by bundle id
+        continue-on-error: true
+        run: |
+          UDID=$(cat "$OUT/udid.txt")
+          for b in com.apple.shortcuts is.workflow.my.app com.apple.Health com.apple.mobilesafari; do
+            echo "=== launch $b"; xcrun simctl launch "$UDID" "$b" 2>&1; echo "exit=$?"
+            sleep 6; xcrun simctl io "$UDID" screenshot "$OUT/screens/07-launch-$b.png"
+          done 2>&1 | tee "$OUT/launch.txt"
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-lab-results
+          path: results
+          if-no-files-found: warn

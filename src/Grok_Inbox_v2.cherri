@@ -1,0 +1,16 @@
+#include 'actions/web'
+#define color green
+#define glyph heart
+
+const ContentsOfURL = downloadURL("https://ntfy.sh/YOUR-NTFY-TOPIC-q/raw?poll=1&since=60m")
+const SplitText = splitText(ContentsOfURL)
+
+for _ in SplitText {
+	if @RepeatItem {
+		rawAction("is.workflow.actions.addnewreminder", {
+			"WFCalendarItemTitle": "{@RepeatItem}"
+		})
+	}
+}
+getBatteryLevel()
+downloadURL("https://ntfy.sh/YOUR-NTFY-TOPIC-r/publish?message=inbox-ok%20battery%3D{}")

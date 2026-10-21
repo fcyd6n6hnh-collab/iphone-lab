@@ -1,0 +1,10 @@
+#define color blue
+#define glyph heart
+
+rawAction("is.workflow.actions.filter.health.quantity", {
+	"WFContentItemFilter": "",
+	"WFContentItemSortOrder": "Oldest First",
+	"WFContentItemSortProperty": "Start Date"
+})
+@GrokEmail = "you@example.com"
+sendEmail(@GrokEmail, "", "[HEALTH SYNC]", false)

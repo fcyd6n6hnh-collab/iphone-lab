@@ -1,0 +1,7 @@
+#include 'actions/sharing'
+#define name Health Test
+#define color blue
+#define glyph heart
+
+@email = "you@example.com"
+sendEmail(@email, "", "[HEALTH SYNC] test", "[HEALTH SYNC] test", false)
