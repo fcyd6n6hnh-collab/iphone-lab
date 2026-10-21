@@ -4,7 +4,7 @@ on:
     inputs:
       runner:
         description: runner label
-        default: macos-latest
+        default: macos-26-intel
   push:
     branches: [main]
 permissions:
@@ -14,7 +14,7 @@ defaults:
     shell: bash --noprofile --norc {0}
 jobs:
   probe:
-    runs-on: ${{ inputs.runner || 'macos-latest' }}
+    runs-on: ${{ inputs.runner || 'macos-26-intel' }}
     timeout-minutes: 40
     env:
       OUT: ${{ github.workspace }}/results
@@ -133,6 +133,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ios-lab-results-${{ inputs.runner || 'macos-latest' }}
+          name: ios-lab-results-${{ inputs.runner || 'macos-26-intel' }}
           path: results
           if-no-files-found: warn
