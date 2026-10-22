@@ -3,24 +3,24 @@
 appId: com.apple.shortcuts
 ---
 - extendedWaitUntil: {visible: "Add Shortcut", timeout: 8000, optional: true}
-- takeScreenshot: ${SHOTS}/00-after-file-url
+- takeScreenshot: 00-after-file-url
 - runFlow:
     when: {notVisible: "Add Shortcut"}
     file: files_nav.yaml
 - extendedWaitUntil: {visible: "Add Shortcut", timeout: 30000, optional: true}
-- takeScreenshot: ${SHOTS}/02-import-sheet
+- takeScreenshot: 02-import-sheet
 - runFlow: accept.yaml
-- takeScreenshot: ${SHOTS}/03-after-add
+- takeScreenshot: 03-after-add
 - launchApp: {appId: com.apple.shortcuts, stopApp: true}
 - runFlow: {when: {visible: "All Shortcuts"}, commands: [{tapOn: "All Shortcuts"}]}
 - extendedWaitUntil: {visible: "${NAME}", timeout: 20000}
-- takeScreenshot: ${SHOTS}/04-library
+- takeScreenshot: 04-library
 - tapOn: "${NAME}"
 - extendedWaitUntil: {visible: "__never_present__", timeout: 6000, optional: true}
-- takeScreenshot: ${SHOTS}/05-after-tile-tap
+- takeScreenshot: 05-after-tile-tap
 - runFlow: accept.yaml
 - extendedWaitUntil: {visible: "__never_present__", timeout: 8000, optional: true}
-- takeScreenshot: ${SHOTS}/06-after-prompts
+- takeScreenshot: 06-after-prompts
 - runFlow: accept.yaml
 - extendedWaitUntil: {visible: "__never_present__", timeout: 8000, optional: true}
-- takeScreenshot: ${SHOTS}/07-final
+- takeScreenshot: 07-final
