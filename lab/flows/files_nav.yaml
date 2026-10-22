@@ -1,0 +1,12 @@
+# Files > On My iPhone, adaptively (only taps what is on screen), then taps ${FILE}.
+appId: com.apple.DocumentsApp
+---
+- launchApp: {appId: com.apple.DocumentsApp}
+- extendedWaitUntil: {visible: "__never_present__", timeout: 4000, optional: true}
+- runFlow: {when: {notVisible: "${FILE}", visible: "On My iPhone"}, commands: [{tapOn: "On My iPhone"}]}
+- runFlow: {when: {notVisible: "${FILE}", visible: "Browse"}, commands: [{tapOn: "Browse"}, {waitForAnimationToEnd: {}}]}
+- runFlow: {when: {notVisible: "${FILE}", visible: "Browse"}, commands: [{tapOn: "Browse"}, {waitForAnimationToEnd: {}}]}
+- runFlow: {when: {notVisible: "${FILE}", visible: "On My iPhone"}, commands: [{tapOn: "On My iPhone"}]}
+- extendedWaitUntil: {visible: "${FILE}", timeout: 20000}
+- takeScreenshot: ${SHOTS}/01-files
+- tapOn: "${FILE}"

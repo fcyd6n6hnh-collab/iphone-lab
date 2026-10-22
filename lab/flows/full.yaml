@@ -1,14 +1,12 @@
-# One Maestro session per shortcut (driver start-up is slow on Intel runners):
-# Files > On My iPhone > tap ${FILE} > Add Shortcut > Shortcuts library > tap ${NAME} > accept prompts.
-appId: com.apple.DocumentsApp
+# One Maestro session per shortcut. tap.sh first tries `simctl openurl file://...shortcut`;
+# if no import sheet appears, falls back to tapping the file in the Files app.
+appId: com.apple.shortcuts
 ---
-- launchApp: {appId: com.apple.DocumentsApp, stopApp: true}
-- runFlow: {when: {visible: "Browse"}, commands: [{tapOn: "Browse"}]}
-- runFlow: {when: {visible: "Browse"}, commands: [{tapOn: "Browse"}]}
-- tapOn: "On My iPhone"
-- extendedWaitUntil: {visible: "${FILE}", timeout: 20000}
-- takeScreenshot: ${SHOTS}/01-files
-- tapOn: "${FILE}"
+- extendedWaitUntil: {visible: "Add Shortcut", timeout: 8000, optional: true}
+- takeScreenshot: ${SHOTS}/00-after-file-url
+- runFlow:
+    when: {notVisible: "Add Shortcut"}
+    file: files_nav.yaml
 - extendedWaitUntil: {visible: "Add Shortcut", timeout: 30000, optional: true}
 - takeScreenshot: ${SHOTS}/02-import-sheet
 - runFlow: accept.yaml
