@@ -5,7 +5,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { writeFileSync, existsSync, statSync, mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
-import { join, dirname } from "node:path";
+import { join, dirname, resolve } from "node:path";
 
 const out = process.argv[2] || "results";
 const listOnly = process.argv.includes("--list-only");
@@ -22,9 +22,15 @@ const transport = new StdioClientTransport({
 });
 const client = new Client({ name: "iphone-lab-smoke", version: "1.0.0" });
 const text = r => (r.content || []).filter(c => c.type === "text").map(c => c.text).join("\n");
-async function call(name, args = {}) {
+async function call(name, args = {}, tries = 1) {
   const t0 = Date.now();
-  const r = await client.callTool({ name, arguments: args }, undefined, { timeout: 300000 });
+  let r;
+  for (let i = 0; i < tries; i++) {
+    r = await client.callTool({ name, arguments: args }, undefined, { timeout: 300000 });
+    if (!r.isError && !/^Error|failed/i.test(text(r))) break;
+    console.log(`retry ${name} (${i + 1}/${tries}): ${text(r).slice(0, 160)}`);
+    await sleep(10000);
+  }
   return { r, ms: Date.now() - t0 };
 }
 
@@ -44,19 +50,24 @@ try {
   step("booted simulator listed", !!udid && devText.includes(udid), `${dev.ms} ms`);
 
   // 1 screenshot as image content (what the model sees)
-  const shot = await call("mobile_take_screenshot", { device: udid });
+  const shot = await call("mobile_take_screenshot", { device: udid }, 3);
   const img = (shot.r.content || []).find(c => c.type === "image");
   if (img) writeFileSync(join(out, "mcp-01-screenshot.png"), Buffer.from(img.data, "base64"));
   step("mobile_take_screenshot returns an image", !!img && img.data.length > 1000, img ? `${img.mimeType} ${Math.round(img.data.length * 0.75 / 1024)} KB, ${shot.ms} ms` : text(shot.r).slice(0, 300));
 
   // 2 save screenshot to a file
-  const p2 = join(process.cwd(), out, "mcp-02-saved.png");
-  const sv = await call("mobile_save_screenshot", { device: udid, saveTo: p2 });
+  const p2 = resolve(out, "mcp-02-saved.png");
+  const sv = await call("mobile_save_screenshot", { device: udid, saveTo: p2 }, 3);
   step("mobile_save_screenshot writes a file", existsSync(p2) && statSync(p2).size > 1000, existsSync(p2) ? `${statSync(p2).size} bytes` : text(sv.r).slice(0, 300));
 
   // 3 tap test: open Settings, tap "General" by coordinates, expect the General page ("About")
-  await call("mobile_launch_app", { device: udid, packageName: "com.apple.Preferences" });
-  await sleep(4000);
+  for (let i = 0; i < 3; i++) {
+    await call("mobile_launch_app", { device: udid, packageName: "com.apple.Preferences" });
+    await sleep(5000);
+    const fg = text((await call("mobile_get_foreground_app", { device: udid })).r);
+    console.log("foreground:", fg.slice(0, 160));
+    if (/com\.apple\.Preferences/.test(fg)) break;
+  }
   const el1 = await call("mobile_list_elements_on_screen", { device: udid, format: "json" });
   const t1 = text(el1.r);
   writeFileSync(join(out, "elements-settings.json"), t1 + "\n");
