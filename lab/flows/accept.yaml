@@ -1,5 +1,4 @@
-# Taps through Shortcuts import / first-run / permission prompts.
-# Uses when-visible checks (fast) instead of optional taps (slow 7 s timeouts).
+# Taps through Shortcuts import / first-run / permission prompts (fast when-visible checks).
 appId: com.apple.shortcuts
 ---
 - repeat:
@@ -16,6 +15,12 @@ appId: com.apple.shortcuts
             visible: "Set Up Shortcut"
           commands:
             - tapOn: "Set Up Shortcut"
+            - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible: "Open in Shortcuts"
+          commands:
+            - tapOn: "Open in Shortcuts"
             - waitForAnimationToEnd
       - runFlow:
           when:
