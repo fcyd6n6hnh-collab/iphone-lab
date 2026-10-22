@@ -1,0 +1,9 @@
+{
+  "name": "iphone-lab-mcp-smoke",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@mobilenext/mobile-mcp": "1.0.12",
+    "@modelcontextprotocol/sdk": "1.32.1"
+  }
+}
