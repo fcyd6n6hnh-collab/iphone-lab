@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 60
     env:
       OUT: ${{ github.workspace }}/results
-      SERVE: ${{ runner.temp }}/serve
+      SERVE: /tmp/lab-serve
     steps:
       - uses: actions/checkout@v4
       - name: Prepare (decode signed shortcuts from secrets, never printed)
