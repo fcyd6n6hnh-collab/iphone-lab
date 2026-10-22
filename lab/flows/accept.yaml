@@ -1,0 +1,17 @@
+# Taps through every Shortcuts import / first-run / permission prompt it can see.
+# All taps are optional: a missing button is not a failure.
+appId: com.apple.shortcuts
+---
+- repeat:
+    times: 5
+    commands:
+      - tapOn: {text: "Add Shortcut", optional: true}
+      - tapOn: {text: "Set Up Shortcut", optional: true}
+      - tapOn: {text: "Always Allow", optional: true}
+      - tapOn: {text: "Allow Always", optional: true}
+      - tapOn: {text: "Allow Once", optional: true}
+      - tapOn: {text: "Turn On All", optional: true}
+      - tapOn: {text: "Allow", optional: true}
+      - tapOn: {text: "Continue", optional: true}
+      - tapOn: {text: "OK", optional: true}
+      - tapOn: {text: "Done", optional: true}

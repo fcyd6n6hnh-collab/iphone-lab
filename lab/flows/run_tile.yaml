@@ -1,0 +1,12 @@
+# Opens the Shortcuts library and taps the shortcut tile named ${NAME} to run it.
+appId: com.apple.shortcuts
+---
+- launchApp:
+    appId: com.apple.shortcuts
+    stopApp: true
+- tapOn: {text: "Shortcuts", optional: true}
+- tapOn: {text: "All Shortcuts", optional: true}
+- extendedWaitUntil:
+    visible: ${NAME}
+    timeout: 20000
+- tapOn: ${NAME}

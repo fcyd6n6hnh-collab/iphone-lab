@@ -1,0 +1,121 @@
+name: tap-test
+# Real tap-through of signed test shortcuts in the iOS simulator.
+# Test topic and signed shortcut files come from repo secrets; nothing personal is committed.
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: runner label
+        default: macos-26-intel
+      which:
+        description: "hello | hs3 | both"
+        default: both
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash --noprofile --norc {0}
+jobs:
+  tap:
+    runs-on: ${{ inputs.runner || 'macos-26-intel' }}
+    timeout-minutes: 60
+    env:
+      OUT: ${{ github.workspace }}/results
+      SERVE: ${{ runner.temp }}/serve
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare (decode signed shortcuts from secrets, never printed)
+        env:
+          HELLO: ${{ secrets.LAB_HELLO_B64 }}
+          HS3: ${{ secrets.LAB_HS3_B64 }}
+        run: |
+          mkdir -p "$OUT/screens" "$SERVE"
+          printf '%s' "$HELLO" | base64 -D > "$SERVE/Lab Hello.shortcut"
+          printf '%s' "$HS3" | base64 -D > "$SERVE/Lab Health Sync v3.shortcut"
+          for f in "$SERVE"/*.shortcut; do echo "$(basename "$f") $(wc -c <"$f") bytes magic=$(head -c4 "$f")"; done | tee "$OUT/inputs.txt"
+          date -u +%s > "$OUT/t0.txt"
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - name: Install Maestro (free OSS CLI, XCUITest driver)
+        run: |
+          export MAESTRO_CLI_NO_ANALYTICS=1
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          "$HOME/.maestro/bin/maestro" --version | tee "$OUT/maestro-version.txt"
+      - name: Boot iPhone simulator, start video
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json,sys
+          d=json.load(sys.stdin)["devices"]
+          c=[(rt,x) for rt,xs in d.items() if "iOS" in rt for x in xs if x["name"].startswith("iPhone")]
+          c.sort(key=lambda t:t[0]); rt,x=c[-1]; print(x["udid"]); print(rt,x["name"],file=sys.stderr)') 2> "$OUT/device.txt"
+          echo "$UDID" > "$OUT/udid.txt"; cat "$OUT/device.txt"
+          xcrun simctl boot "$UDID"; xcrun simctl bootstatus "$UDID" -b | tail -2
+          xcrun simctl status_bar "$UDID" override --time 9:41 || true
+          sleep 20
+          nohup xcrun simctl io "$UDID" recordVideo --codec=h264 --force "$OUT/run.mp4" > "$OUT/video.log" 2>&1 &
+          echo $! > "$OUT/video.pid"
+          xcrun simctl io "$UDID" screenshot "$OUT/screens/00-home.png"
+      - name: Grant privacy (where simctl allows)
+        run: |
+          U=$(cat "$OUT/udid.txt")
+          xcrun simctl help privacy 2>&1 | tee "$OUT/privacy-help.txt" | sed -n '1,60p'
+          for b in com.apple.shortcuts com.apple.Health; do for s in all health notifications; do
+            printf '%s %s: ' "$b" "$s"; xcrun simctl privacy "$U" grant "$s" "$b" 2>&1 | tail -1; echo "exit=${PIPESTATUS[0]}"
+          done; done | tee "$OUT/privacy.txt"
+      - name: Serve signed files on localhost
+        run: |
+          cd "$SERVE" && nohup python3 -m http.server 8765 --bind 127.0.0.1 > "$OUT/http.log" 2>&1 &
+          sleep 2; curl -sI "http://127.0.0.1:8765/Lab%20Hello.shortcut" | head -1
+      - name: Warm up Shortcuts app + Maestro driver
+        continue-on-error: true
+        run: |
+          U=$(cat "$OUT/udid.txt")
+          xcrun simctl launch "$U" com.apple.shortcuts; sleep 10
+          perl -e 'alarm 600; exec @ARGV' maestro --device "$U" test lab/flows/accept.yaml > "$OUT/maestro-warmup.log" 2>&1; echo "warmup exit=$?"
+          tail -20 "$OUT/maestro-warmup.log"
+          xcrun simctl io "$U" screenshot "$OUT/screens/00-warm.png"
+      - name: Tap-test Lab Hello
+        if: inputs.which != 'hs3'
+        continue-on-error: true
+        run: lab/tap.sh hello "Lab Hello.shortcut" "Lab Hello"
+      - name: Tap-test Lab Health Sync v3
+        if: inputs.which != 'hello'
+        continue-on-error: true
+        run: lab/tap.sh hs3 "Lab Health Sync v3.shortcut" "Lab Health Sync v3"
+      - name: Verify web requests reached the test ntfy topic
+        continue-on-error: true
+        env:
+          T: ${{ secrets.LAB_NTFY_TOPIC }}
+        run: |
+          sleep 10
+          curl -s "https://ntfy.sh/$T/json?poll=1&since=$(cat "$OUT/t0.txt")" | python3 -c '
+          import sys,json
+          ms=[json.loads(l) for l in sys.stdin if l.strip()]
+          ms=[m for m in ms if m.get("event")=="message"]
+          for m in ms: print("received:", m.get("title"), "|", (m.get("message") or "")[:200].replace("\n"," / "))
+          t={m.get("title") for m in ms}
+          print("STEP ntfy: lab-hello =>", "PASS" if "lab-hello" in t else "FAIL")
+          print("STEP ntfy: lab-health-sync-v3 =>", "PASS" if "lab-health-sync-v3" in t else "FAIL")' | tee "$OUT/ntfy-verify.txt"
+          cat "$OUT/steps.txt" 2>/dev/null
+      - name: Stop video, collect logs
+        if: always()
+        run: |
+          U=$(cat "$OUT/udid.txt" 2>/dev/null)
+          [ -f "$OUT/video.pid" ] && kill -INT "$(cat "$OUT/video.pid")" && sleep 5
+          [ -n "$U" ] && xcrun simctl io "$U" screenshot "$OUT/screens/99-final.png"
+          rm -f "$OUT/video.pid"; ls -laR "$OUT" | head -80
+          cp -R ~/.maestro/tests "$OUT/maestro-tests" 2>/dev/null || true
+      - name: Scrub test topic from text results
+        if: always()
+        env:
+          T: ${{ secrets.LAB_NTFY_TOPIC }}
+        run: |
+          grep -rlF "$T" "$OUT" 2>/dev/null | while read -r f; do LC_ALL=C sed -i '' "s/$T/<TEST_TOPIC>/g" "$f"; echo "scrubbed $(basename "$f")"; done; true
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tap-test-results
+          path: results
+          if-no-files-found: warn
