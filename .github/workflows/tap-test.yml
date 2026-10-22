@@ -22,6 +22,8 @@ jobs:
     env:
       OUT: ${{ github.workspace }}/results
       SERVE: /tmp/lab-serve
+      MAESTRO_DRIVER_STARTUP_TIMEOUT: '600000'
+      MAESTRO_CLI_NO_ANALYTICS: '1'
     steps:
       - uses: actions/checkout@v4
       - name: Prepare (decode signed shortcuts from secrets, never printed)
@@ -92,6 +94,7 @@ jobs:
         run: |
           U=$(cat "$OUT/udid.txt")
           xcrun simctl launch "$U" com.apple.shortcuts; sleep 10
+          t0=$SECONDS; perl -e 'alarm 700; exec @ARGV' maestro --device "$U" hierarchy > "$OUT/hier-warmup.json" 2> "$OUT/maestro-warmup.log"; echo "driver warm-up exit=$? $((SECONDS-t0))s"
           xcrun simctl io "$U" screenshot "$OUT/screens/00-warm.png"
       - name: Tap-test Lab Hello
         if: inputs.which != 'hs3'
