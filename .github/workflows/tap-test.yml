@@ -63,10 +63,30 @@ jobs:
           for b in com.apple.shortcuts com.apple.Health; do for s in all health notifications; do
             printf '%s %s: ' "$b" "$s"; xcrun simctl privacy "$U" grant "$s" "$b" 2>&1 | tail -1; echo "exit=${PIPESTATUS[0]}"
           done; done | tee "$OUT/privacy.txt"
-      - name: Serve signed files on localhost
+      - name: Serve signed files (http :8765, https :8443 with test CA trusted in the sim) and copy to Files
         run: |
+          U=$(cat "$OUT/udid.txt"); C=/tmp/lab-ca; mkdir -p $C; cd $C
+          openssl req -x509 -newkey rsa:2048 -nodes -days 2 -subj "/CN=iphone-lab test CA" -keyout ca.key -out ca.pem \
+            -addext "basicConstraints=critical,CA:TRUE" -addext "keyUsage=critical,keyCertSign,cRLSign" 2>/dev/null
+          openssl req -newkey rsa:2048 -nodes -subj "/CN=localhost" -keyout leaf.key -out leaf.csr 2>/dev/null
+          printf 'subjectAltName=DNS:localhost,IP:127.0.0.1\nextendedKeyUsage=serverAuth\nbasicConstraints=CA:FALSE\n' > ext.cnf
+          openssl x509 -req -in leaf.csr -CA ca.pem -CAkey ca.key -CAcreateserial -days 2 -extfile ext.cnf -out leaf.pem 2>/dev/null
+          xcrun simctl keychain "$U" add-root-cert ca.pem; echo "add-root-cert exit=$?"
+          cat > /tmp/https_serve.py <<'PY'
+          import http.server, ssl, functools, sys
+          H = functools.partial(http.server.SimpleHTTPRequestHandler, directory=sys.argv[1])
+          s = http.server.ThreadingHTTPServer(("127.0.0.1", 8443), H)
+          ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); ctx.load_cert_chain("/tmp/lab-ca/leaf.pem", "/tmp/lab-ca/leaf.key")
+          s.socket = ctx.wrap_socket(s.socket, server_side=True); s.serve_forever()
+          PY
+          nohup python3 /tmp/https_serve.py "$SERVE" > "$OUT/https.log" 2>&1 &
           cd "$SERVE" && nohup python3 -m http.server 8765 --bind 127.0.0.1 > "$OUT/http.log" 2>&1 &
-          sleep 2; curl -sI "http://127.0.0.1:8765/Lab%20Hello.shortcut" | head -1
+          sleep 3
+          curl -s -o /dev/null -w "http %{http_code}\n" "http://127.0.0.1:8765/Lab%20Hello.shortcut"
+          curl -s -o /dev/null --cacert $C/ca.pem -w "https %{http_code}\n" "https://localhost:8443/Lab%20Hello.shortcut"
+          G=$(xcrun simctl get_app_container "$U" com.apple.DocumentsApp groups 2>/dev/null | awk '/FileProvider.LocalStorage/{print $2}')
+          echo "Files local storage group: ${G:-not found}"
+          if [ -n "$G" ]; then mkdir -p "$G/File Provider Storage"; cp "$SERVE"/*.shortcut "$G/File Provider Storage/"; ls "$G/File Provider Storage"; fi
       - name: Warm up Shortcuts app + Maestro driver
         continue-on-error: true
         run: |

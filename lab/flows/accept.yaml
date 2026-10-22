@@ -1,17 +1,67 @@
-# Taps through every Shortcuts import / first-run / permission prompt it can see.
-# All taps are optional: a missing button is not a failure.
+# Taps through Shortcuts import / first-run / permission prompts.
+# Uses when-visible checks (fast) instead of optional taps (slow 7 s timeouts).
 appId: com.apple.shortcuts
 ---
 - repeat:
-    times: 5
+    times: 3
     commands:
-      - tapOn: {text: "Add Shortcut", optional: true}
-      - tapOn: {text: "Set Up Shortcut", optional: true}
-      - tapOn: {text: "Always Allow", optional: true}
-      - tapOn: {text: "Allow Always", optional: true}
-      - tapOn: {text: "Allow Once", optional: true}
-      - tapOn: {text: "Turn On All", optional: true}
-      - tapOn: {text: "Allow", optional: true}
-      - tapOn: {text: "Continue", optional: true}
-      - tapOn: {text: "OK", optional: true}
-      - tapOn: {text: "Done", optional: true}
+      - runFlow:
+          when:
+            visible: "Add Shortcut"
+          commands:
+            - tapOn: "Add Shortcut"
+            - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible: "Set Up Shortcut"
+          commands:
+            - tapOn: "Set Up Shortcut"
+            - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible: "Always Allow"
+          commands:
+            - tapOn: "Always Allow"
+            - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible: "Allow Always"
+          commands:
+            - tapOn: "Allow Always"
+            - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible: "Allow Once"
+          commands:
+            - tapOn: "Allow Once"
+            - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible: "Turn On All"
+          commands:
+            - tapOn: "Turn On All"
+            - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible: "Allow"
+          commands:
+            - tapOn: "Allow"
+            - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible: "Continue"
+          commands:
+            - tapOn: "Continue"
+            - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible: "OK"
+          commands:
+            - tapOn: "OK"
+            - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible: "Done"
+          commands:
+            - tapOn: "Done"
+            - waitForAnimationToEnd

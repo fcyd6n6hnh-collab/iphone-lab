@@ -1,0 +1,15 @@
+# Opens Files > On My iPhone and taps the file ${FILE} (opens the Shortcuts import sheet).
+appId: com.apple.DocumentsApp
+---
+- launchApp:
+    appId: com.apple.DocumentsApp
+    stopApp: true
+- runFlow:
+    when: {visible: "Browse"}
+    commands: [{tapOn: "Browse"}]
+- runFlow:
+    when: {visible: "Browse"}
+    commands: [{tapOn: "Browse"}]
+- tapOn: "On My iPhone"
+- extendedWaitUntil: {visible: "${STEM}", timeout: 20000}
+- tapOn: "${STEM}"
